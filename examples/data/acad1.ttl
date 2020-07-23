@@ -1,0 +1,112 @@
+@prefix brick: <https://brickschema.org/schema/1.0.3/Brick#> .
+@prefix bf: <https://brickschema.org/schema/1.0.3/BrickFrame#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+
+@prefix acad1: <acad1:>.
+@prefix : <acad1:>.
+
+:ACAD1 a brick:Building;
+  brick:hasPart :FLG;
+  brick:hasPart :FL1;
+  brick:hasPart :FL2;
+  brick:hasPart :WINGC.
+
+:FLG a brick:Floor;
+  # brick:isPartOf :ACAD1;
+  brick:hasPart :CG11.
+:FL1 a brick:Floor.
+  # brick:isPartOf :ACAD1.
+:FL2 a brick:Floor;
+  # brick:isPartOf :ACAD1;
+  brick:hasPart :C213;
+  brick:hasPart :C205;
+  brick:hasPart :C201.
+
+:WINGC a brick:Wing;
+  # brick:isPartOf :ACAD1;
+  brick:hasPart :CG11;
+  brick:hasPart :C213;
+  brick:hasPart :C205;
+  brick:hasPart :C201.
+
+
+:C213 a brick:Laboratory.
+    # brick:isPartOf :FL2;
+    # brick:isPartOf :WINGC.
+:C201 a brick:Room.
+    # brick:isPartOf :FL2;
+    # brick:isPartOf :WINGC.
+:C205 a brick:Room.
+    # brick:isPartOf :FL2;
+    # brick:isPartOf :WINGC.
+:CG11 a brick:Server_Room.
+    # brick:isPartOf :FLG;
+    # brick:isPartOf :WINGC.
+
+# Server room temperature sensors
+:CG11_ZN1_T a brick:Zone_Air_Temperature_Sensor.
+:CG11_ZN2_T a brick:Zone_Air_Temperature_Sensor.
+:CG11_ZN3_T a brick:Zone_Air_Temperature_Sensor.
+:CG11_ZN4_T a brick:Zone_Air_Temperature_Sensor.
+:CG11_ZN5_T a brick:Zone_Air_Temperature_Sensor.
+# :CG11 brick:isLocationOf :CG11_ZN1_T.
+:CG11 brick:hasPoint :CG11_ZN1_T.
+# :CG11 brick:isLocationOf :CG11_ZN2_T.
+:CG11 brick:hasPoint :CG11_ZN2_T.
+# :CG11 brick:isLocationOf :CG11_ZN3_T.
+:CG11 brick:hasPoint :CG11_ZN3_T.
+# :CG11 brick:isLocationOf :CG11_ZN4_T.
+:CG11 brick:hasPoint :CG11_ZN4_T.
+# :CG11 brick:isLocationOf :CG11_ZN5_T.
+:CG11 brick:hasPoint :CG11_ZN5_T.
+
+# :AHU1 a brick:AHU;
+#   brick:feeds :VAV101;
+#   brick:feeds :VAV102;
+#   brick:hasPart :SF1.
+
+# :SF1 a brick:Supply_Fan.
+
+# :VAV101 a brick:VAV;
+#     brick:feeds :RM101.
+
+# :VAV102 a brick:VAV;
+#     brick:feeds :RM102.
+
+
+# :BLDG_RM101_ZN_T a brick:Zone_Air_Temperature_Sensor.
+# :BLDG_RM101_ZNT_SP a brick:Zone_Air_Temperature_Setpoint.
+# :BLDG_RM101_ONOFF a brick:On_Off_Command.
+# :BLDG_RM101_MTR a brick:Thermal_Power_Sensor.
+
+# :RM101 brick:isLocationOf :BLDG_RM101_ZN_T.
+# :RM101 brick:hasPoint :BLDG_RM101_ZN_T.
+
+# :VAV101  brick:hasPoint :BLDG_RM101_ZN_T.
+# :VAV101  brick:hasPoint :BLDG_RM101_ZNT_SP.
+# :VAV101  brick:hasPoint :BLDG_RM101_ONOFF.
+# :VAV101  brick:hasPoint :BLDG_RM101_MTR.
+
+# :BLDG_RM102_ZN_T a brick:Zone_Air_Temperature_Sensor.
+# :BLDG_RM102_ZNT_SP a brick:Zone_Air_Temperature_Setpoint.
+# :BLDG_RM102_ONOFF a brick:On_Off_Command.
+# :BLDG_RM102_MTR a brick:Thermal_Power_Sensor.
+
+# :RM102 brick:isLocationOf :BLDG_RM102_ZN_T.
+# :RM102 brick:hasPoint :BLDG_RM102_ZN_T.
+
+# :VAV102  brick:hasPoint :BLDG_RM102_ZN_T.
+# :VAV102  brick:hasPoint :BLDG_RM102_ZNT_SP.
+# :VAV102  brick:hasPoint :BLDG_RM102_ONOFF.
+# :VAV102  brick:hasPoint :BLDG_RM102_MTR.
+
+# brick:Thermal_Power_Sensor rdfs:subClassOf brick:Sensor.
+
+
+# acad1:jason_loc a brick:Person_Location_Sensor .
+# brick:Person_Location_Sensor rdfs:subClassOf brick:Sensor.
