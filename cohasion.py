@@ -14,53 +14,88 @@ def load_ttl():
         print(resp.json())
 
 
-def get_entity():
+def get_entity(entity_id):
     headers = authorize_headers()
     resp = requests.get(ENTITY_BASE + '/' +
-                        quote_plus(znt_id), headers=headers)
-    print(resp.json())
+                        quote_plus(entity_id), headers=headers)
+    return resp.json()
 
-
-def sparql_location_tree():
+def get_children(entity_id):
     qstr = """
-select ?child ?parent ?pc ?cc where {
-    {?child brick:isPartOf ?parent.}
-    UNION
-    {?parent brick:hasPoint ?child.}
-    ?parent a ?pc.
-    ?child a ?cc.
-}
-"""
+    PREFIX acad1: <acad1:>
+    SELECT DISTINCT ?child
+    WHERE {
+        {?child a/rdfs:subClassOf* brick:Location .
+        %s brick:hasPart ?child .}
+        UNION
+        {?child a/rdfs:subClassOf* brick:Location .
+        ?child brick:isPartOf %s .}
+    }
+    """ % (entity_id, entity_id)
     headers = authorize_headers({
         'Content-Type': 'sparql-query'
     })
     resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
-    print(resp)
-    print(resp.json()['results']['bindings'])
-    return resp.json()
+    resp = (resp.json()['results']['bindings'])
+    return list(map(lambda x: x['child']['value'], resp))
 
 
-def sparql_root_nodes():
+def get_points(entity_id):
     qstr = """
-    SELECT DISTINCT ?child 
-       WHERE {
-           ?child a/rdfs:subClassOf* brick:Location.
-           FILTER NOT EXISTS{
-               ?parent brick:hasPart ?child.
-           }
-       }
+    SELECT DISTINCT ?point
+    WHERE {
+        ?point a/rdfs:subClassOf* brick:Point .
+        {%s brick:hasPoint ?child .}
+        UNION
+        {?child brick:isPointOf %s .}
+    }
+    """ % (entity_id, entity_id)
+    headers = authorize_headers({
+        'Content-Type': 'sparql-query'
+    })
+    resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
+    return (resp.json()['results']['bindings'])
+
+
+def get_root_nodes():
+    qstr = """
+    SELECT DISTINCT ?node
+    WHERE {
+        ?node a/rdfs:subClassOf* brick:Location .
+        MINUS{
+            {?parent brick:hasPart ?node.}
+            UNION
+            {?node brick:isPartOf ?parent.}
+        }
+    }
     """
     headers = authorize_headers({
         'Content-Type': 'sparql-query'
     })
     resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
     # print(resp.json())
-    return resp.json()
+    resp= resp.json()['results']['bindings']
+    return  list(map(lambda x: x['node']['value'], resp))
 
 
+def dfs(root):
+    # if already visited, ignore
+    if root in visited:
+        return
+    # get children
+    children = get_children(root)
+
+    for child in children:
+        # iterate over children
+        dfs(child)
+    # do stuff
+    print(root)
+    visited[root] = True
 
 
 load_ttl()
-# graph = sparql_location_tree()
-roots = sparql_root_nodes()
+roots = get_root_nodes()
 print(roots)
+visited={}
+for root in roots:
+    dfs(root)
