@@ -14,6 +14,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from fastapi_utils.inferring_router import InferringRouter
 from fastapi_utils.cbv import cbv
 from starlette.requests import Request
+from urllib.parse import unquote
 
 from .models import Entity, Relationships, EntityIds, Entities, IsSuccess
 from .models import EntitiesCreateResponse, CreateEntitiesRequest
@@ -198,7 +199,9 @@ class EntitiesByIdResource:
                             token: HTTPAuthorizationCredentials = jwt_security_scheme,
                             ):
         for [prop, obj] in relationships.relationships:
-            await self.brick_db.add_triple(URIRef(entity_id), prop, obj)
+            print("Creates relationships")
+            print(unquote(entity_id))
+            print(await self.brick_db.add_triple(unquote(entity_id), prop, obj))
         return IsSuccess()
 
 def get_brick_relation_base(brick_version): #TODO: Implement this in brick-data.
@@ -274,17 +277,16 @@ class EntitiesResource:
     @authorized
     async def post(self,
                    request: Request,
-                   create_entities: CreateEntitiesRequest = Body(..., description='A dictionary to describe entities to create. Keys are Brick Classes and values are the number of instances to create for the Class'),
+                   create_entities: CreateEntitiesRequest = Body(..., description='A dictionary to describe entities to create. Keys are Brick Classes and values are the URIs'),
                    graph: str = Query(configs['brick']['base_graph'], description=graph_desc),
                    token: HTTPAuthorizationCredentials = jwt_security_scheme,
                    ) -> EntitiesCreateResponse:
         resp = defaultdict(list)
-        for brick_type, entities_num in create_entities.items():
-            for _ in range(entities_num):
-                uri = UUID[str(gen_uuid())]
-                await self.brick_db.add_triple(uri, RDF.type, URIRef(brick_type))
-                # TODO: Check the brick_type based on the parameter in the future
-                resp[brick_type].append(str(uri))
+        for brick_type, brick_uri in create_entities.items():
+            uri = str(brick_uri)
+            await self.brick_db.add_triple(uri, RDF.type, URIRef(brick_type))
+            # TODO: Check the brick_type based on the parameter in the future
+            resp[brick_type].append(str(uri))
         return dict(resp)
 
     async def add_entities_json_deprecated(self, entities):

@@ -86,7 +86,7 @@ class CreateEntityRequest(BaseModel):
 BrickClass = str
 
 CreateEntitiesRequest = Dict[BrickClass,# = Field(..., description='A Class name, often defined in Brick'),
-                             int# = Field(...,description='The number of instances to create for the Brick Class')
+                             str# = Field(...,description='The number of instances to create for the Brick Class')
                              ]
 
 EntitiesCreateResponse = Dict[BrickClass, List[str]]
