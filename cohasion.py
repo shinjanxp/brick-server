@@ -1,17 +1,28 @@
 from dotenv import load_dotenv
 load_dotenv()
-from tests.remote.common import ENTITY_BASE, authorize_headers, BRICK, QUERY_BASE
+from rdflib import Namespace
+from time import sleep
+from collections import defaultdict
 from tests.remote.test_entities import *
+from tests.remote.common import ENTITY_BASE, authorize_headers, BRICK, QUERY_BASE
+import json
+
+BRICK_VERSION = '1.0.3'
+BRICK = Namespace(f'https://brickschema.org/schema/{BRICK_VERSION}/Brick#')
+
 
 class Entity:
-    def __init__(self,id, classId):
+    def __init__(self, id, classId):
         self.id = id
         self.classId = classId.split("#")[1]
+
     def __str__(self):
-        return "%s => %s"%(self.id,self.classId)
+        return "%s => %s" % (self.id, self.classId)
+
     def __repr__(self):
-        return "%s => %s"%(self.id,self.classId)
-        
+        return "%s => %s" % (self.id, self.classId)
+
+
 def load_ttl():
     with open('examples/data/acad1.ttl', 'rb') as fp:
         headers = authorize_headers({
@@ -27,6 +38,7 @@ def get_entity(entity_id):
     resp = requests.get(ENTITY_BASE + '/' +
                         quote_plus(entity_id), headers=headers)
     return resp.json()
+
 
 def get_children(entity_id):
     qstr = """
@@ -47,7 +59,7 @@ def get_children(entity_id):
     })
     resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
     resp = (resp.json()['results']['bindings'])
-    return  list(map(lambda x: Entity(x['child']['value'], x['cc']['value']), resp))
+    return list(map(lambda x: Entity(x['child']['value'], x['cc']['value']), resp))
 
 
 def get_points(entity_id):
@@ -70,9 +82,8 @@ def get_points(entity_id):
         'Content-Type': 'sparql-query'
     })
     resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
-    resp= resp.json()['results']['bindings']
-    return  list(map(lambda x: Entity(x['point']['value'], x['pc']['value']), resp))
-
+    resp = resp.json()['results']['bindings']
+    return list(map(lambda x: Entity(x['point']['value'], x['pc']['value']), resp))
 
 
 def get_root_nodes():
@@ -93,31 +104,76 @@ def get_root_nodes():
     })
     resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
     # print(resp.json())
-    resp= resp.json()['results']['bindings']
-    return  list(map(lambda x: Entity(x['node']['value'], x['nc']['value']), resp))
+    resp = resp.json()['results']['bindings']
+    return list(map(lambda x: Entity(x['node']['value'], x['nc']['value']), resp))
 
 
-def dfs(root):
+def create_entity(classId):
+    headers = authorize_headers()
+    body = {
+        "%s%s" % (BRICK, classId): 1,
+    }
+    resp = requests.post(ENTITY_BASE, json=body, headers=headers)
+    print(resp.json())
+    return resp.json()["%s%s" % (BRICK, classId)][0]
+
+
+def update_entity(subject, prop, obj):
+    headers = authorize_headers()
+    body = {
+        "relationships": [
+            [str(prop), str(obj)]
+        ]
+    }
+    print (json.dumps(body))
+    resp = requests.post(ENTITY_BASE + '/' +
+                         quote_plus(subject), json=body, headers=headers)
+    print(resp.json())
+
+
+def get_all_entities():
+    headers = authorize_headers()
+    resp = requests.get(ENTITY_BASE, headers=headers)
+    assert resp.status_code == 200
+    print(resp.json()['entity_ids'])
+
+
+def groupPointsForNode(points):
+    groups = defaultdict(list)
+    # Append points to a dict keyed by classId
+    for point in points:
+        groups[point.classId].append(point)
+    # Iterate through each class
+    for classId in groups.keys():
+        print(groups[classId])
+    # print(groups)
+
+
+def dfs(node):
     # if already visited, ignore
-    if root in visited:
+    if node.id in visited:
         return
     # get children
-    children = get_children(root.id)
+    children = get_children(node.id)
 
     for child in children:
         # iterate over children
         dfs(child)
     # do stuff
-    print(root.id)
-    points = get_points(root.id)
-    print("points",points)
-    visited[root] = True
+    print(node.id)
+    points = get_points(node.id)
+    # Compute pointGroup for this node
+    groupPointsForNode(points)
+    # print("points",points)
+    visited[node.id] = True
 
 
 load_ttl()
 roots = get_root_nodes()
 print(roots)
-visited={}
-for root in roots:
-    dfs(root)
-# print (get_points('acad1:CG11'))
+visited = {}
+# for root in roots:
+# dfs(root)
+entityId = create_entity('Zone_Temperature_Sensor')
+sleep(1)
+update_entity(entityId, 'brick:hasAssociatedTag', 'brick_tag:Aggregate')

@@ -6,9 +6,13 @@
 @prefix xml: <http://www.w3.org/XML/1998/namespace> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
+@prefix tag: <https://brickschema.org/schema/1.1/BrickTag#> .
 
 @prefix acad1: <acad1:>.
 @prefix : <acad1:>.
+
+tag:Aggregate a brick:Tag ;
+    rdfs:label "Aggregate" .
 
 :ACAD1 a brick:Building;
   brick:hasPart :FLG;
