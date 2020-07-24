@@ -197,9 +197,9 @@ class EntitiesByIdResource:
                             relationships: Relationships = Body(..., description=relationships_desc),
                             token: HTTPAuthorizationCredentials = jwt_security_scheme,
                             ):
-        for [prop, obj] in relationships:
-            self.brick_db.add_triple(URIRef(entity_id), prop, obj)
-        return 'Success', 200
+        for [prop, obj] in relationships.relationships:
+            await self.brick_db.add_triple(URIRef(entity_id), prop, obj)
+        return IsSuccess()
 
 def get_brick_relation_base(brick_version): #TODO: Implement this in brick-data.
     version_parts = brick_version.split('.')
