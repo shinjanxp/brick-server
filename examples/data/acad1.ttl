@@ -8,8 +8,8 @@
 
 @prefix tag: <https://brickschema.org/schema/1.1/BrickTag#> .
 
-@prefix acad1: <acad1:>.
-@prefix : <acad1:>.
+@prefix acad1: <http://example.com/building/acad1#>.
+@prefix : <http://example.com/building/acad1#>.
 
 tag:Aggregate a brick:Tag ;
     rdfs:label "Aggregate" .
@@ -58,6 +58,8 @@ tag:Aggregate a brick:Tag ;
 :CG11_ZN3_T a brick:Zone_Air_Temperature_Sensor.
 :CG11_ZN4_T a brick:Zone_Air_Temperature_Sensor.
 :CG11_ZN5_T a brick:Zone_Air_Temperature_Sensor.
+:CG11_POW_A a brick:Power_Sensor .
+:CG11_POW_L a brick:Power_Sensor .
 # :CG11 brick:isLocationOf :CG11_ZN1_T.
 :CG11 brick:hasPoint :CG11_ZN1_T.
 # :CG11 brick:isLocationOf :CG11_ZN2_T.
@@ -68,6 +70,8 @@ tag:Aggregate a brick:Tag ;
 :CG11 brick:hasPoint :CG11_ZN4_T.
 # :CG11 brick:isLocationOf :CG11_ZN5_T.
 :CG11 brick:hasPoint :CG11_ZN5_T.
+:CG11 brick:hasPoint :CG11_POW_A.
+:CG11 brick:hasPoint :CG11_POW_L.
 
 # :AHU1 a brick:AHU;
 #   brick:feeds :VAV101;
