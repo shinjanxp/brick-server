@@ -8,159 +8,10 @@ from tests.remote.common import ENTITY_BASE, authorize_headers, BRICK, QUERY_BAS
 import json
 from urllib.parse import quote_plus
 from uuid import uuid4 as gen_uuid
+from api import *
 
 BRICK_VERSION = '1.0.3'
 BRICK = Namespace(f'https://brickschema.org/schema/{BRICK_VERSION}/Brick#')
-
-
-class Entity:
-    def __init__(self, id, classId):
-        self.id = id
-        self.classId = classId
-
-    def __str__(self):
-        return "%s => %s" % (self.id, self.classId)
-
-    def __repr__(self):
-        return "%s => %s" % (self.id, self.classId)
-
-class AggregatePoint(Entity):
-    def __init__(self, id, classId, aggregatesFor=None):
-        Entity.__init__(self, id, classId)
-        self.aggregatesFor = aggregatesFor
-
-###############################################################
-#################  API calls  #################################
-###############################################################
-
-def load_ttl():
-    with open('examples/data/acad1.ttl', 'rb') as fp:
-        headers = authorize_headers({
-            'Content-Type': 'text/turtle',
-        })
-        resp = requests.post(ENTITY_BASE + '/upload',
-                             headers=headers, data=fp, allow_redirects=False)
-
-
-def get_entity(entity_id):
-    headers = authorize_headers()
-    resp = requests.get(ENTITY_BASE + '/' +
-                        quote_plus(entity_id), headers=headers)
-    return resp.json()
-
-
-def get_children(entity_id):
-    qstr = """
-    PREFIX acad1: <http://example.com/building/acad1#>
-    SELECT DISTINCT ?child ?cc
-    WHERE {
-        {?child a/rdfs:subClassOf* brick:Location .
-        <%s> brick:hasPart ?child .
-        ?child a ?cc .}
-        UNION
-        {?child a/rdfs:subClassOf* brick:Location .
-        ?child brick:isPartOf <%s> .
-        ?child a ?cc .}
-    }
-    """ % (entity_id, entity_id)
-    headers = authorize_headers({
-        'Content-Type': 'sparql-query'
-    })
-    resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
-    resp = (resp.json()['results']['bindings'])
-    return list(map(lambda x: Entity(x['child']['value'], x['cc']['value']), resp))
-
-
-def get_points(entity_id):
-    qstr = """
-    PREFIX acad1: <http://example.com/building/acad1#>
-
-    SELECT DISTINCT ?point ?pc
-    WHERE {
-        {<%s> brick:hasPoint ?point .
-        ?point a ?pc .}
-        UNION
-        {?point brick:isPointOf <%s> .
-        ?point a ?pc .}
-        FILTER NOT EXISTS {
-            ?point brick:hasAssociatedTag brick_tag:Aggregate
-        }
-        
-    }
-    """ % (entity_id, entity_id)
-    headers = authorize_headers({
-        'Content-Type': 'sparql-query'
-    })
-    resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
-    resp = resp.json()['results']['bindings']
-    return list(map(lambda x: Entity(x['point']['value'], x['pc']['value']), resp))
-
-
-def get_root_nodes():
-    qstr = """
-    SELECT DISTINCT ?node ?nc
-    WHERE {
-        ?node a/rdfs:subClassOf* brick:Location .
-        MINUS{
-            {?parent brick:hasPart ?node.}
-            UNION
-            {?node brick:isPartOf ?parent.}
-        }
-        ?node a ?nc .
-    }
-    """
-    headers = authorize_headers({
-        'Content-Type': 'sparql-query'
-    })
-    resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
-    # print(resp.json())
-    resp = resp.json()['results']['bindings']
-    return list(map(lambda x: Entity(x['node']['value'], x['nc']['value']), resp))
-
-
-def create_entity(classId, entityId):
-    headers = authorize_headers()
-    body = {
-        "%s" % (classId): "%s"%entityId,
-    }
-    resp = requests.post(ENTITY_BASE, json=body, headers=headers)
-    return resp.json()["%s" %(classId)][0]
-
-
-def update_entity(subject, prop, obj):
-    headers = authorize_headers()
-    body = {
-        "relationships": [
-            [str(prop), str(obj)]
-        ]
-    }
-    resp = requests.post(ENTITY_BASE + '/' +
-                         quote_plus(subject), json=body, headers=headers)
-
-
-def get_all_entities():
-    headers = authorize_headers()
-    resp = requests.get(ENTITY_BASE, headers=headers)
-    assert resp.status_code == 200
-    return resp.json()['entity_ids']
-
-def random_query():
-    qstr = """
-    PREFIX acad1: <http://example.com/building/acad1#>
-    SELECT DISTINCT ?subject ?object
-    WHERE {
-        ?subject brick:hasPoint ?object .
-        ?object brick:hasAssociatedTag brick_tag:Aggregate .
-    }
-    """
-    headers = authorize_headers({
-        'Content-Type': 'sparql-query'
-    })
-    resp = requests.post(QUERY_BASE + '/sparql', data=qstr, headers=headers)
-    # print(resp.json())
-    resp = resp.json()['results']['bindings']
-    return resp
-    # return list(map(lambda x: Entity(x['node']['value'], x['nc']['value']), resp))
 
 
 ###############################################################
@@ -258,10 +109,14 @@ def generateAggregatePointsForChildClasses(node, groups):
             if not childNode:
                 continue
             for point in childNode:
-                pointGroups[point.classId].append(point)
+                classesAssociatedWithPoint = get_classes_for_point(point)
+                pointGroups[classesAssociatedWithPoint].append(point)
 
-       # Go through each pointgroup
+        # Go through each pointgroup
+        # Here each pointClassId is a tuple of all classes associated with each point i.e. 
+        # the class that the point is an instance of + the classes that it aggregates for   
         for pointClassId, points in pointGroups.items():
+
             # Count the number of aggregate points for pointClassId. If that is not equal to the number 
             # of child nodes, that means all child nodes are not covered. So we can ignore this group
             if len(points) !=childNodesCount:
@@ -285,7 +140,12 @@ def generateAggregatePointsForChildClasses(node, groups):
 
             # Generate a new aggregate point with the same class as all the other points
             aggregatePointId = "http://example.com/building/acad1#%s"%gen_uuid()
-            aggregatePoint = Entity(create_entity(pointClassId, aggregatePointId), pointClassId)
+            aggregatePoint = Entity(create_entity(pointClassId[0], aggregatePointId), pointClassId[0])
+            # Associate it with the same aggregatesForClass as the other points
+            # Skip the first entry in pointClassId, since aggregatePoint is an instance of pointClassId[0]
+            for classId in pointClassId[1:]:
+                update_entity(quote_plus(aggregatePoint.id), 'brick:aggregatesForClass', classId)
+
             # Assign it the aggregate tag
             # we need to urlencode the first argument in update_entity function call since that will be used as a url parameter. The rest are in request body
             update_entity(quote_plus(aggregatePoint.id), 'brick:hasAssociatedTag', 'brick_tag:Aggregate')
@@ -326,11 +186,9 @@ def dfs(node):
     return aggregatePoints
 
 
-# load_ttl()
-# roots = get_root_nodes()
-# print(roots)
-# visited = {}
-# for root in roots:
-#     dfs(root)
-
-# print(random_query())
+load_ttl()
+roots = get_root_nodes()
+print(roots)
+visited = {}
+for root in roots:
+    dfs(root)
