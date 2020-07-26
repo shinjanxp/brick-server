@@ -177,6 +177,68 @@ def get_classes_for_point(point):
     classes.extend(list(map(lambda x:x['afc']['value'] , resp)))
     return tuple(classes)
 
+def replace_prefix(listOfTriples):
+    prefixes = [
+        ('http://example.com/building/acad1#', 'acad1:'),
+        ('https://brickschema.org/schema/1.0.3/Brick#', 'brick:'),
+        ('https://brickschema.org/schema/1.0.3/BrickTag#', 'tag:')
+    ]
+    prefixedList = []
+    for triple in listOfTriples:
+        newTriple = triple
+        for prefix in prefixes:
+            newTriple = newTriple.replace(prefix[0], prefix[1])
+        prefixedList.append(newTriple)
+    return prefixedList
+
+def dump_graph():
+    qstrs = [
+        # get all entities
+        ("""
+        SELECT ?subject ?object
+        WHERE {
+            {?subject a ?object.
+            ?subject a/rdfs:subClassOf* brick:Location .}
+            UNION
+            {?subject a ?object.
+            ?subject a/rdfs:subClassOf* brick:Equipment .}
+            UNION
+            {?subject a ?object.
+            ?subject a/rdfs:subClassOf* brick:Point .}            
+        }
+        """, 'a')
+    ]
+    relationships = ['hasPoint', 'isPointOf', 'hasPart', 'isPartOf', 'aggregates', 'aggregatesForClass', 'hasAssociatedTag']
+    for relationship in relationships:
+        qstrs.append(("""
+        SELECT ?subject ?object
+        WHERE {
+            ?subject brick:%s ?object .
+        }
+        """%relationship,"brick:%s"%relationship))
+    # Empty the file
+    with open('dump.ttl', 'w') as outfile:
+        outfile.write('@prefix acad1: <http://example.com/building/acad1#>. \n')
+        outfile.write('@prefix brick: <https://brickschema.org/schema/1.0.3/Brick#> . \n')
+        outfile.write('@prefix tag: <https://brickschema.org/schema/1.1/BrickTag#> . \n')
+     
+    for qstr in qstrs:
+        headers = authorize_headers({
+            'Content-Type': 'sparql-query'
+        })
+        resp = requests.post(QUERY_BASE + '/sparql', data=qstr[0], headers=headers)
+        # print(resp.json())
+        resp = resp.json()['results']['bindings']
+        resp = list(map(lambda x:("%s %s %s .\n"%(x['subject']['value'], qstr[1], x['object']['value'])), resp))
+        print(len(resp))
+        resp = replace_prefix(resp)
+        with open('dump.ttl', 'a') as outfile:
+            outfile.writelines(resp)
+            outfile.write('\n')
+     
+    # return list(map(lambda x: Entity(x['node']['value'], x['nc']['value']), resp))
+
+
 def random_query():
     qstr = """
     PREFIX acad1: <http://example.com/building/acad1#>
@@ -204,5 +266,5 @@ def writeDictToFile(d, filename):
         
     
 if __name__=="__main__":
-    writeDictToFile(random_query(), 'result.txt')
+    dump_graph()
     
