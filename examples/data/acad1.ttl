@@ -28,18 +28,22 @@ tag:Aggregate a brick:Tag ;
 :FL2 a brick:Floor;
   # brick:isPartOf :ACAD1;
   brick:hasPart :C213;
+  brick:hasPart :C212;
   brick:hasPart :C205;
   brick:hasPart :C201.
 
 :WINGC a brick:Wing;
   # brick:isPartOf :ACAD1;
   brick:hasPart :CG11;
+  brick:hasPart :C212;
   brick:hasPart :C213;
   brick:hasPart :C205;
   brick:hasPart :C201.
 
 
 :C213 a brick:Laboratory.
+:C212 a brick:Laboratory.
+
     # brick:isPartOf :FL2;
     # brick:isPartOf :WINGC.
 :C201 a brick:Room.
@@ -59,20 +63,33 @@ tag:Aggregate a brick:Tag ;
 :CG11_ZN4_T a brick:Zone_Air_Temperature_Sensor.
 :CG11_ZN5_T a brick:Zone_Air_Temperature_Sensor.
 :CG11_POW_A a brick:Power_Sensor .
-:CG11_POW_L a brick:Power_Sensor .
-# :CG11 brick:isLocationOf :CG11_ZN1_T.
 :CG11 brick:hasPoint :CG11_ZN1_T.
-# :CG11 brick:isLocationOf :CG11_ZN2_T.
 :CG11 brick:hasPoint :CG11_ZN2_T.
-# :CG11 brick:isLocationOf :CG11_ZN3_T.
 :CG11 brick:hasPoint :CG11_ZN3_T.
-# :CG11 brick:isLocationOf :CG11_ZN4_T.
 :CG11 brick:hasPoint :CG11_ZN4_T.
-# :CG11 brick:isLocationOf :CG11_ZN5_T.
 :CG11 brick:hasPoint :CG11_ZN5_T.
 :CG11 brick:hasPoint :CG11_POW_A.
-:CG11 brick:hasPoint :CG11_POW_L.
 
+
+# Laboratory power sensors
+:C212_POW_A a brick:Power_Sensor .
+:C212_POW_L a brick:Power_Sensor .
+:C213_POW_A a brick:Power_Sensor .
+:C213_POW_L a brick:Power_Sensor .
+:C212 brick:hasPoint :C212_POW_A.
+:C212 brick:hasPoint :C212_POW_L.
+:C213 brick:hasPoint :C213_POW_A.
+:C213 brick:hasPoint :C213_POW_L.
+
+# Laboratory temperature sensors
+:C212_ZNT_1 a brick:Zone_Air_Temperature_Sensor .
+:C212_ZNT_2 a brick:Zone_Air_Temperature_Sensor .
+:C213_ZNT_1 a brick:Zone_Air_Temperature_Sensor .
+:C213_ZNT_2 a brick:Zone_Air_Temperature_Sensor .
+:C212 brick:hasPoint :C212_ZNT_1.
+:C212 brick:hasPoint :C212_ZNT_2.
+:C213 brick:hasPoint :C213_ZNT_1.
+:C213 brick:hasPoint :C213_ZNT_2.
 # :AHU1 a brick:AHU;
 #   brick:feeds :VAV101;
 #   brick:feeds :VAV102;
