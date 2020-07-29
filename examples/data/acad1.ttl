@@ -90,48 +90,7 @@ tag:Aggregate a brick:Tag ;
 :C212 brick:hasPoint :C212_ZNT_2.
 :C213 brick:hasPoint :C213_ZNT_1.
 :C213 brick:hasPoint :C213_ZNT_2.
-# :AHU1 a brick:AHU;
-#   brick:feeds :VAV101;
-#   brick:feeds :VAV102;
-#   brick:hasPart :SF1.
 
-# :SF1 a brick:Supply_Fan.
-
-# :VAV101 a brick:VAV;
-#     brick:feeds :RM101.
-
-# :VAV102 a brick:VAV;
-#     brick:feeds :RM102.
-
-
-# :BLDG_RM101_ZN_T a brick:Zone_Air_Temperature_Sensor.
-# :BLDG_RM101_ZNT_SP a brick:Zone_Air_Temperature_Setpoint.
-# :BLDG_RM101_ONOFF a brick:On_Off_Command.
-# :BLDG_RM101_MTR a brick:Thermal_Power_Sensor.
-
-# :RM101 brick:isLocationOf :BLDG_RM101_ZN_T.
-# :RM101 brick:hasPoint :BLDG_RM101_ZN_T.
-
-# :VAV101  brick:hasPoint :BLDG_RM101_ZN_T.
-# :VAV101  brick:hasPoint :BLDG_RM101_ZNT_SP.
-# :VAV101  brick:hasPoint :BLDG_RM101_ONOFF.
-# :VAV101  brick:hasPoint :BLDG_RM101_MTR.
-
-# :BLDG_RM102_ZN_T a brick:Zone_Air_Temperature_Sensor.
-# :BLDG_RM102_ZNT_SP a brick:Zone_Air_Temperature_Setpoint.
-# :BLDG_RM102_ONOFF a brick:On_Off_Command.
-# :BLDG_RM102_MTR a brick:Thermal_Power_Sensor.
-
-# :RM102 brick:isLocationOf :BLDG_RM102_ZN_T.
-# :RM102 brick:hasPoint :BLDG_RM102_ZN_T.
-
-# :VAV102  brick:hasPoint :BLDG_RM102_ZN_T.
-# :VAV102  brick:hasPoint :BLDG_RM102_ZNT_SP.
-# :VAV102  brick:hasPoint :BLDG_RM102_ONOFF.
-# :VAV102  brick:hasPoint :BLDG_RM102_MTR.
-
-# brick:Thermal_Power_Sensor rdfs:subClassOf brick:Sensor.
-
-
-# acad1:jason_loc a brick:Person_Location_Sensor .
-# brick:Person_Location_Sensor rdfs:subClassOf brick:Sensor.
+# Classroom power sensor
+:C205_POW_A a brick:Power_Sensor .
+:C205 brick:hasPoint :C205_POW_A.

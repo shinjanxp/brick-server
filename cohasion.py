@@ -5,13 +5,14 @@ from time import sleep
 from collections import defaultdict
 from tests.remote.test_entities import *
 from tests.remote.common import ENTITY_BASE, authorize_headers, BRICK, QUERY_BASE
-import json
+import json, os
 from urllib.parse import quote_plus
 from uuid import uuid4 as gen_uuid
 from api import *
 
 BRICK_VERSION = '1.0.3'
 BRICK = Namespace(f'https://brickschema.org/schema/{BRICK_VERSION}/Brick#')
+BUILDING_NAMESPACE = os.getenv('BUILDING_NAMESPACE','http://example.com/building/bldg#')
 
 
 ###############################################################
@@ -86,7 +87,7 @@ def generateAggregatePoints(node, groups):
             continue
         
         # Generate a new aggregate point with the same class as all the other points
-        aggregatePointId = "http://example.com/building/acad1#%s"%gen_uuid()
+        aggregatePointId = "%s%s"%(BUILDING_NAMESPACE,gen_uuid())
         aggregatePoint = Entity(create_entity(classId, aggregatePointId), classId) # Create the new point entity
         
 
@@ -139,7 +140,7 @@ def generateAggregatePointsForChildClasses(node, groups):
                 continue
 
             # Generate a new aggregate point with the same class as all the other points
-            aggregatePointId = "http://example.com/building/acad1#%s"%gen_uuid()
+            aggregatePointId = "%s%s"%(BUILDING_NAMESPACE,gen_uuid())
             aggregatePoint = Entity(create_entity(pointClassId[0], aggregatePointId), pointClassId[0])
             # Associate it with the same aggregatesForClass as the other points
             # Skip the first entry in pointClassId, since aggregatePoint is an instance of pointClassId[0]
@@ -186,9 +187,11 @@ def dfs(node):
     return aggregatePoints
 
 
-load_ttl()
+load_ttl(os.getenv('BUILDING_TTL_FILE', 'examples/data/bldg.ttl'))
 roots = get_root_nodes()
 print(roots)
 visited = {}
 for root in roots:
     dfs(root)
+
+dump_graph()

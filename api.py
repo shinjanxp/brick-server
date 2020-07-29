@@ -5,12 +5,14 @@ from time import sleep
 from collections import defaultdict
 from tests.remote.test_entities import *
 from tests.remote.common import ENTITY_BASE, authorize_headers, BRICK, QUERY_BASE
-import json
+import json, os
 from urllib.parse import quote_plus
 from uuid import uuid4 as gen_uuid
 
 BRICK_VERSION = '1.0.3'
 BRICK = Namespace(f'https://brickschema.org/schema/{BRICK_VERSION}/Brick#')
+BUILDING_NAMESPACE = os.getenv('BUILDING_NAMESPACE','http://example.com/building/bldg#')
+BUILDING_PREFIX = os.getenv('BUILDING_PREFIX','bldg:')
 
 
 class Entity:
@@ -33,8 +35,8 @@ class AggregatePoint(Entity):
 #################  API calls  #################################
 ###############################################################
 
-def load_ttl():
-    with open('examples/data/acad1.ttl', 'rb') as fp:
+def load_ttl(filename):
+    with open(filename, 'rb') as fp:
         headers = authorize_headers({
             'Content-Type': 'text/turtle',
         })
@@ -51,14 +53,13 @@ def get_entity(entity_id):
 
 def get_children(entity_id):
     qstr = """
-    PREFIX acad1: <http://example.com/building/acad1#>
     SELECT DISTINCT ?child ?cc
     WHERE {
-        {?child a/rdfs:subClassOf* brick:Location .
+        {
         <%s> brick:hasPart ?child .
         ?child a ?cc .}
         UNION
-        {?child a/rdfs:subClassOf* brick:Location .
+        {
         ?child brick:isPartOf <%s> .
         ?child a ?cc .}
     }
@@ -73,7 +74,6 @@ def get_children(entity_id):
 
 def get_points(entity_id):
     qstr = """
-    PREFIX acad1: <http://example.com/building/acad1#>
 
     SELECT DISTINCT ?point ?pc
     WHERE {
@@ -100,7 +100,11 @@ def get_root_nodes():
     qstr = """
     SELECT DISTINCT ?node ?nc
     WHERE {
-        ?node a/rdfs:subClassOf* brick:Location .
+        {
+            {?node a/rdfs:subClassOf* brick:Location .}
+            UNION
+            {?node a/rdfs:subClassOf* brick:Equipment .}
+        }
         MINUS{
             {?parent brick:hasPart ?node.}
             UNION
@@ -148,7 +152,6 @@ def get_classes_for_point(point):
     classes = []
     # Get the class that point is an instance of
     qstr = """
-    PREFIX acad1: <http://example.com/building/acad1#>
     SELECT DISTINCT ?pc
     WHERE {
         <%s> a ?pc
@@ -163,7 +166,6 @@ def get_classes_for_point(point):
 
     # Get the classes that point aggregatesFor
     qstr = """
-    PREFIX acad1: <http://example.com/building/acad1#>
     SELECT DISTINCT ?afc
     WHERE {
         <%s> brick:aggregatesForClass ?afc
@@ -179,7 +181,7 @@ def get_classes_for_point(point):
 
 def replace_prefix(listOfTriples):
     prefixes = [
-        ('http://example.com/building/acad1#', 'acad1:'),
+        ( '%s'%BUILDING_NAMESPACE, '%s'%BUILDING_PREFIX),
         ('https://brickschema.org/schema/1.0.3/Brick#', 'brick:'),
         ('https://brickschema.org/schema/1.0.3/BrickTag#', 'tag:')
     ]
@@ -218,7 +220,7 @@ def dump_graph():
         """%relationship,"brick:%s"%relationship))
     # Empty the file
     with open('dump.ttl', 'w') as outfile:
-        outfile.write('@prefix acad1: <http://example.com/building/acad1#>. \n')
+        outfile.write('@prefix %s <%s>. \n'%(BUILDING_PREFIX, BUILDING_NAMESPACE))
         outfile.write('@prefix brick: <https://brickschema.org/schema/1.0.3/Brick#> . \n')
         outfile.write('@prefix tag: <https://brickschema.org/schema/1.1/BrickTag#> . \n')
      
@@ -241,7 +243,6 @@ def dump_graph():
 
 def random_query():
     qstr = """
-    PREFIX acad1: <http://example.com/building/acad1#>
     SELECT DISTINCT ?subject ?object ?oc ?afc
     WHERE {
         ?subject brick:hasPoint ?object .
@@ -266,5 +267,5 @@ def writeDictToFile(d, filename):
         
     
 if __name__=="__main__":
-    dump_graph()
+    print(get_root_nodes())
     
