@@ -62,8 +62,16 @@ def get_children(entity_id):
         {
         ?child brick:isPartOf <%s> .
         ?child a ?cc .}
+        UNION
+        {
+        ?child brick:hasLocation <%s> .
+        ?child a ?cc .}
+        UNION
+        {
+        <%s> brick:isLocationOf ?child .
+        ?child a ?cc .}
     }
-    """ % (entity_id, entity_id)
+    """ % (entity_id, entity_id, entity_id, entity_id)
     headers = authorize_headers({
         'Content-Type': 'sparql-query'
     })
@@ -109,6 +117,11 @@ def get_root_nodes():
             {?parent brick:hasPart ?node.}
             UNION
             {?node brick:isPartOf ?parent.}
+            UNION
+            {?parent brick:isLocationOf ?node.}
+            UNION
+            {?node brick:hasLocation ?parent.}
+
         }
         ?node a ?nc .
     }
@@ -210,7 +223,7 @@ def dump_graph():
         }
         """, 'a')
     ]
-    relationships = ['hasPoint', 'isPointOf', 'hasPart', 'isPartOf', 'aggregates', 'aggregatesForClass', 'hasAssociatedTag']
+    relationships = ['hasPoint', 'isPointOf', 'hasPart', 'isPartOf', 'hasLocation', 'isLocationOf', 'feeds', 'aggregates', 'aggregatesForClass', 'hasAssociatedTag']
     for relationship in relationships:
         qstrs.append(("""
         SELECT ?subject ?object
@@ -243,12 +256,10 @@ def dump_graph():
 
 def random_query():
     qstr = """
-    SELECT DISTINCT ?subject ?object ?oc ?afc
+    SELECT DISTINCT ?subject ?object
     WHERE {
-        ?subject brick:hasPoint ?object .
-        ?object a ?oc .
-        ?object brick:hasAssociatedTag brick_tag:Aggregate .
-        OPTIONAL {?object brick:aggregatesForClass ?afc .}
+        ?subject brick:isPartOf ?object .
+        
     }
     """
     headers = authorize_headers({
@@ -267,5 +278,4 @@ def writeDictToFile(d, filename):
         
     
 if __name__=="__main__":
-    print(get_root_nodes())
-    
+    writeDictToFile(random_query(), 'roots.txt')

@@ -18,7 +18,6 @@ decorator==4.4.1
 git+https://github.com/jbkoh/fastapi.git@fix-bodyparsing
 fastapi-utils==0.1.1
 GeoAlchemy2==0.6.3
-get==2019.4.13
 h11==0.9.0
 httptools==0.0.13
 idna==2.8
@@ -44,7 +43,6 @@ parso==0.6.1
 pexpect==4.8.0
 pickleshare==0.7.5
 pluggy==0.13.1
-post==2019.4.13
 prompt-toolkit==3.0.3
 psycopg2-binary==2.8.4
 ptyprocess==0.6.0

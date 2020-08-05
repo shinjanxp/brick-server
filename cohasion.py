@@ -14,6 +14,8 @@ BRICK_VERSION = '1.0.3'
 BRICK = Namespace(f'https://brickschema.org/schema/{BRICK_VERSION}/Brick#')
 BUILDING_NAMESPACE = os.getenv('BUILDING_NAMESPACE','http://example.com/building/bldg#')
 
+newVAPCount=0
+existingVAPCount=0
 
 ###############################################################
 #################  aggregation methods  #######################
@@ -74,7 +76,7 @@ def getAggregatePointsForNode(node):
         return list(map(lambda x: AggregatePoint(x['point']['value'], x['pc']['value']), resp))
 
 def generateAggregatePoints(node, groups):
-    
+    global newVAPCount, existingVAPCount
     for classId, points in groups.items():
         existingAggregate = checkAggregateExists(points)
         if(existingAggregate):
@@ -84,12 +86,13 @@ def generateAggregatePoints(node, groups):
         # If only one point exists in group, use that as the aggregate
         if len(points) == 1:
             update_entity(quote_plus(points[0].id), 'brick:hasAssociatedTag', 'brick_tag:Aggregate') # Assign it the aggregate tag
+            existingVAPCount+=1
             continue
         
         # Generate a new aggregate point with the same class as all the other points
         aggregatePointId = "%s%s"%(BUILDING_NAMESPACE,gen_uuid())
         aggregatePoint = Entity(create_entity(classId, aggregatePointId), classId) # Create the new point entity
-        
+        newVAPCount+=1
 
         update_entity(quote_plus(aggregatePoint.id), 'brick:hasAssociatedTag', 'brick_tag:Aggregate') # Assign it the aggregate tag
         update_entity(quote_plus(node.id), 'brick:hasPoint', aggregatePoint.id) # we need to urlencode the first arguement since that will be used as a url parameter. The rest are in request body
@@ -99,6 +102,7 @@ def generateAggregatePoints(node, groups):
         # Relate generated point with node
 
 def generateAggregatePointsForChildClasses(node, groups):
+    global newVAPCount
     for childClassId, allPoints in groups.items():
         # Count the number of child nodes 
         childNodesCount = len(allPoints)
@@ -142,6 +146,7 @@ def generateAggregatePointsForChildClasses(node, groups):
             # Generate a new aggregate point with the same class as all the other points
             aggregatePointId = "%s%s"%(BUILDING_NAMESPACE,gen_uuid())
             aggregatePoint = Entity(create_entity(pointClassId[0], aggregatePointId), pointClassId[0])
+            newVAPCount+=1
             # Associate it with the same aggregatesForClass as the other points
             # Skip the first entry in pointClassId, since aggregatePoint is an instance of pointClassId[0]
             for classId in pointClassId[1:]:
@@ -186,12 +191,19 @@ def dfs(node):
     visited[node.id] = True
     return aggregatePoints
 
-
+print("Loading ttl")
 load_ttl(os.getenv('BUILDING_TTL_FILE', 'examples/data/bldg.ttl'))
+print("ttl loaded")
+sleep(10)
+print("Roots:")
 roots = get_root_nodes()
 print(roots)
+print("Running dfs")
 visited = {}
 for root in roots:
     dfs(root)
 
+print("newVAPCount: ", newVAPCount)
+print("existingVAPCount", existingVAPCount)
+print("Dumping graph")
 dump_graph()

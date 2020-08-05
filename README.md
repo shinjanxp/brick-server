@@ -90,6 +90,18 @@ If you want to learn more about Brick, please visit [brickschema.org](https://br
 1. Prepare an app token.
 2. Check the instruction at TODO
 
+## CoHASIOn
+1. Set the correct Brick version and root namespace in configs/configs.json
+2. `docker-compose up -d`
+3. Check that the server was started properly using `docker-compose logs -f brick-server`.
+4. Copy `.env.example` to `.env`
+5. To run the cohasion algorithm, we need a brick ttl file. To use one of the example files provide the file path, building namespace and prefix in `.env`.
+6. (Optional) Create a virtual environment and install python dependencies
+    - `virtualenv -p python3 .venv`
+    - `source .venv/bin/activate`
+    - `pip install -r requirements.txt`
+7. Run cohasion `python cohasion.py`. It will load the ttl, run cohasion algorithm and save the augmented graph as a ttl file in `dump.ttl`.
+
 # TODO
 - Integration with Traefik
 - Implementation of full authorization.
